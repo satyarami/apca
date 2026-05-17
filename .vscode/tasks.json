@@ -1,0 +1,59 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "maven: clean",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["clean"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "maven: compile",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["compile"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "maven: test",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "maven: package",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["package"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "maven: exec (run Main)",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["exec:java"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "maven: verify",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["verify"],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}
