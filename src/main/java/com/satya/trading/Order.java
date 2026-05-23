@@ -1,4 +1,4 @@
-package com.satya.apca;
+package com.satya.trading;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,6 +17,8 @@ public record Order(
         BigDecimal qty,
         @JsonProperty("filled_qty") BigDecimal filledQty,
         @JsonProperty("filled_avg_price") BigDecimal filledAvgPrice,
+        @JsonProperty("stop_price") BigDecimal stopPrice,
+        @JsonProperty("limit_price") BigDecimal limitPrice,
         String status,
         @JsonProperty("created_at") Instant createdAt,
         @JsonProperty("submitted_at") Instant submittedAt,

@@ -3,9 +3,16 @@
   "configurations": [
     {
       "type": "java",
+      "name": "Main",
+      "request": "launch",
+      "mainClass": "com.satya.trading.Main",
+      "projectName": "trading"
+    },
+    {
+      "type": "java",
       "name": "Run Main",
       "request": "launch",
-      "mainClass": "com.satya.apca.Main",
+      "mainClass": "com.satya.trading.Main",
       "projectName": "apca",
       "console": "integratedTerminal"
     },
@@ -13,7 +20,7 @@
       "type": "java",
       "name": "Debug Main",
       "request": "launch",
-      "mainClass": "com.satya.apca.Main",
+      "mainClass": "com.satya.trading.Main",
       "projectName": "apca",
       "console": "integratedTerminal",
       "stopOnEntry": false

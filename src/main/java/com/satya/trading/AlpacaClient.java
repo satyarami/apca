@@ -1,10 +1,12 @@
-package com.satya.apca;
+package com.satya.trading;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -55,6 +57,27 @@ public final class AlpacaClient {
         return mapper.readValue(response.body(), Account.class);
     }
 
+    public List<Position> listPositions() throws IOException, InterruptedException {
+        var response = send(authedRequest(baseUrl + "/v2/positions").GET().build());
+        ensureSuccess(response, "GET /v2/positions");
+        return mapper.readValue(response.body(), new TypeReference<List<Position>>() {
+        });
+    }
+
+    public Clock getClock() throws IOException, InterruptedException {
+        var response = send(authedRequest(baseUrl + "/v2/clock").GET().build());
+        ensureSuccess(response, "GET /v2/clock");
+        return mapper.readValue(response.body(), Clock.class);
+    }
+
+    /** Closes the entire position for {@code symbol} via a market order. Returns the submitted order. */
+    public Order closePosition(String symbol) throws IOException, InterruptedException {
+        var url = baseUrl + "/v2/positions/" + URLEncoder.encode(symbol, StandardCharsets.UTF_8);
+        var response = send(authedRequest(url).DELETE().build());
+        ensureSuccess(response, "DELETE /v2/positions/" + symbol);
+        return mapper.readValue(response.body(), Order.class);
+    }
+
     public Order placeMarketOrder(String symbol, int qty, OrderSide side)
             throws IOException, InterruptedException {
         var body = Map.of(
@@ -63,16 +86,72 @@ public final class AlpacaClient {
                 "side", side.api(),
                 "type", "market",
                 "time_in_force", "day");
-        var json = mapper.writeValueAsString(body);
+        return submitOrder(body);
+    }
 
+    /**
+     * Submit a stop (market-on-trigger) order with time_in_force=GTC.
+     * stopPrice is rounded down to 2 decimals to satisfy Alpaca's sub-penny rules.
+     */
+    public Order placeStopOrder(String symbol, BigDecimal qty, OrderSide side, BigDecimal stopPrice)
+            throws IOException, InterruptedException {
+        var body = Map.of(
+                "symbol", symbol,
+                "qty", qty.stripTrailingZeros().toPlainString(),
+                "side", side.api(),
+                "type", "stop",
+                "time_in_force", "gtc",
+                "stop_price", stopPrice.setScale(2, RoundingMode.DOWN).toPlainString());
+        return submitOrder(body);
+    }
+
+    private Order submitOrder(Map<String, ?> body) throws IOException, InterruptedException {
+        var json = mapper.writeValueAsString(body);
         var request = authedRequest(baseUrl + "/v2/orders")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
-
         var response = send(request);
         ensureSuccess(response, "POST /v2/orders");
         return mapper.readValue(response.body(), Order.class);
+    }
+
+    public List<Order> listOpenOrders() throws IOException, InterruptedException {
+        var url = baseUrl + "/v2/orders?status=open&limit=500";
+        var response = send(authedRequest(url).GET().build());
+        ensureSuccess(response, "GET /v2/orders?status=open");
+        return mapper.readValue(response.body(), new TypeReference<List<Order>>() {
+        });
+    }
+
+    public Order getOrder(String orderId) throws IOException, InterruptedException {
+        var response = send(authedRequest(baseUrl + "/v2/orders/" + orderId).GET().build());
+        ensureSuccess(response, "GET /v2/orders/" + orderId);
+        return mapper.readValue(response.body(), Order.class);
+    }
+
+    /** Returns true if the cancel was accepted; false if the order is already terminal (filled/canceled). */
+    public boolean cancelOrder(String orderId) throws IOException, InterruptedException {
+        var request = authedRequest(baseUrl + "/v2/orders/" + orderId).DELETE().build();
+        var response = send(request);
+        int code = response.statusCode();
+        if (code == 204) return true;
+        if (code == 422) return false;
+        throw new IOException("DELETE /v2/orders/" + orderId + " failed: HTTP " + code + " body=" + response.body());
+    }
+
+    /** Most-recent trade price for {@code symbol} on the IEX feed (free tier). */
+    public BigDecimal getLatestTradePrice(String symbol) throws IOException, InterruptedException {
+        var url = DATA_BASE + "/v2/stocks/" + URLEncoder.encode(symbol, StandardCharsets.UTF_8)
+                + "/trades/latest?feed=iex";
+        var response = send(authedRequest(url).GET().build());
+        ensureSuccess(response, "GET /v2/stocks/" + symbol + "/trades/latest");
+        var root = mapper.readTree(response.body());
+        var priceNode = root.path("trade").path("p");
+        if (priceNode.isMissingNode() || priceNode.isNull()) {
+            throw new IOException("No trade price in response: " + response.body());
+        }
+        return new BigDecimal(priceNode.asText());
     }
 
     /**
