@@ -17,6 +17,8 @@
         <maven.compiler.release>25</maven.compiler.release>
         <junit.version>5.11.4</junit.version>
         <jackson.version>2.18.2</jackson.version>
+        <javafx.version>23.0.1</javafx.version>
+        <atlantafx.version>2.0.1</atlantafx.version>
         <exec.mainClass>com.satya.trading.Main</exec.mainClass>
     </properties>
 
@@ -30,6 +32,17 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>${atlantafx.version}</version>
         </dependency>
 
         <dependency>
@@ -58,6 +71,14 @@
                 <version>3.5.0</version>
                 <configuration>
                     <mainClass>${exec.mainClass}</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>com.satya.trading.TradingApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

@@ -33,3 +33,10 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Runtime state (strategy / trailing-stop persistence)
+.allocations.json
+.trailing-stops.json
+
+# Claude Code local config
+.claude/

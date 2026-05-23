@@ -70,7 +70,10 @@ public final class AlpacaClient {
         return mapper.readValue(response.body(), Clock.class);
     }
 
-    /** Closes the entire position for {@code symbol} via a market order. Returns the submitted order. */
+    /**
+     * Closes the entire position for {@code symbol} via a market order. Returns the
+     * submitted order.
+     */
     public Order closePosition(String symbol) throws IOException, InterruptedException {
         var url = baseUrl + "/v2/positions/" + URLEncoder.encode(symbol, StandardCharsets.UTF_8);
         var response = send(authedRequest(url).DELETE().build());
@@ -90,6 +93,22 @@ public final class AlpacaClient {
     }
 
     /**
+     * Submit a limit order with time_in_force=day.
+     * limitPrice is rounded down to 2 decimals to satisfy Alpaca's sub-penny rules.
+     */
+    public Order placeLimitOrder(String symbol, BigDecimal qty, OrderSide side, BigDecimal limitPrice)
+            throws IOException, InterruptedException {
+        var body = Map.of(
+                "symbol", symbol,
+                "qty", qty.stripTrailingZeros().toPlainString(),
+                "side", side.api(),
+                "type", "limit",
+                "time_in_force", "day",
+                "limit_price", limitPrice.setScale(2, RoundingMode.DOWN).toPlainString());
+        return submitOrder(body);
+    }
+
+    /**
      * Submit a stop (market-on-trigger) order with time_in_force=GTC.
      * stopPrice is rounded down to 2 decimals to satisfy Alpaca's sub-penny rules.
      */
@@ -105,7 +124,7 @@ public final class AlpacaClient {
         return submitOrder(body);
     }
 
-    private Order submitOrder(Map<String, ?> body) throws IOException, InterruptedException {
+    public Order submitOrder(Map<String, ?> body) throws IOException, InterruptedException {
         var json = mapper.writeValueAsString(body);
         var request = authedRequest(baseUrl + "/v2/orders")
                 .header("Content-Type", "application/json")
@@ -130,13 +149,18 @@ public final class AlpacaClient {
         return mapper.readValue(response.body(), Order.class);
     }
 
-    /** Returns true if the cancel was accepted; false if the order is already terminal (filled/canceled). */
+    /**
+     * Returns true if the cancel was accepted; false if the order is already
+     * terminal (filled/canceled).
+     */
     public boolean cancelOrder(String orderId) throws IOException, InterruptedException {
         var request = authedRequest(baseUrl + "/v2/orders/" + orderId).DELETE().build();
         var response = send(request);
         int code = response.statusCode();
-        if (code == 204) return true;
-        if (code == 422) return false;
+        if (code == 204)
+            return true;
+        if (code == 422)
+            return false;
         throw new IOException("DELETE /v2/orders/" + orderId + " failed: HTTP " + code + " body=" + response.body());
     }
 
