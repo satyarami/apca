@@ -24,6 +24,15 @@
       "projectName": "apca",
       "console": "integratedTerminal",
       "stopOnEntry": false
+    },
+    {
+      "type": "java",
+      "name": "Buy TSLA 10",
+      "request": "launch",
+      "mainClass": "com.satya.trading.PlaceOrder",
+      "projectName": "apca",
+      "args": "TSLA 10 buy",
+      "console": "integratedTerminal"
     }
   ]
 }
